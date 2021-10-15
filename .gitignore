@@ -1,5 +1,7 @@
 # Project Specific
-run_api.sh
+oauth.json
+Untitled.ipynb
+api_key
 
 # proprietary LIWC dictionaries must not be uploaded
 common/nlp/lexicons/liwc/proprietary/

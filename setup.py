@@ -12,7 +12,7 @@ setuptools.setup(
     version=version,
     author='Tim Niven',
     author_email='tim@doublethinklab.org',
-    description="Simple wrapper around YouTube's API",
+    description='Reusable module for accessing the YouTube API.',
     url=f'https://github.com/doublethinklab/youtube-api.git#{version}',
     packages=setuptools.find_packages(),
     python_requires='>=3.9.5',
