@@ -1,4 +1,4 @@
-from youtube_api import google_api
+from youtube_api.google import google_api
 from youtube_api.interface import YouTubeApiBase
 
 

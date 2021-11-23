@@ -4,15 +4,16 @@ import unittest
 from freezegun import freeze_time
 
 from tests import responses
-from youtube_api.google_api import *
+from youtube_api.data_structures import *
+from youtube_api.google.data_mapping import *
 
 
-class TestAdaptChannelToChannel(unittest.TestCase):
+class TestMapChannelToChannel(unittest.TestCase):
 
     def test_dw(self):
         response = responses.list_channels_dw
         channel = response['items'][0]
-        channel = adapt_channel_to_channel(channel)
+        channel = map_channel_to_channel(channel)
         expected = Channel(
             id='UCknLrEdhRCp1aegoMqRaCZg',
             title='DW News',
@@ -42,12 +43,12 @@ class TestAdaptChannelToChannel(unittest.TestCase):
         self.assertEqual(expected, channel)
 
 
-class TestAdaptCommentToComment(unittest.TestCase):
+class TestMapCommentToComment(unittest.TestCase):
 
     @freeze_time(datetime(2021, 10, 15, 14, 35, 30))
     def test_dw_comment_1(self):
         comment = responses.dw_comment_thread_1['snippet']['topLevelComment']
-        comment = adapt_comment_to_comment(
+        comment = map_comment_to_comment(
             comment, 'UgzsG9SRCC7R1x_89zV4AaABAg')
         expected = Comment(
             id='UgzsG9SRCC7R1x_89zV4AaABAg',
@@ -63,12 +64,12 @@ class TestAdaptCommentToComment(unittest.TestCase):
         self.assertEqual(comment, expected)
 
 
-class TestAdaptCommentThreadToComments(unittest.TestCase):
+class TestMapCommentThreadToComments(unittest.TestCase):
 
     @freeze_time(datetime(2021, 10, 15, 14, 35, 30))
     def test_dw_comment_thread_with_reply(self):
         comment_thread = responses.dw_comment_thread_with_reply
-        comments = adapt_comment_thread_to_comments(comment_thread)
+        comments = map_comment_thread_to_comments(comment_thread)
         expected = [
             Comment(
                 id='UgxqGWcF4_j3P970oQp4AaABAg',
@@ -97,12 +98,12 @@ class TestAdaptCommentThreadToComments(unittest.TestCase):
         self.assertEqual(expected, comments)
 
 
-class TestAdaptPlaylistItemToVideo(unittest.TestCase):
+class TestMapPlaylistItemToVideo(unittest.TestCase):
 
     @freeze_time(datetime(2021, 10, 15, 14, 35, 30))
     def test_dw_case(self):
         playlist_item = responses.dw_playlist_item
-        video = adapt_playlist_item_to_video(playlist_item)
+        video = map_playlist_item_to_video(playlist_item)
         expected = Video(
             id='5x5UxqKM7-Y',
             channel_id='UCknLrEdhRCp1aegoMqRaCZg',
@@ -136,12 +137,12 @@ class TestAdaptPlaylistItemToVideo(unittest.TestCase):
         self.assertEqual(expected, video)
 
 
-class TestAdaptVideoToVideo(unittest.TestCase):
+class TestMapVideoToVideo(unittest.TestCase):
 
     @freeze_time(datetime(2021, 10, 15, 14, 35, 30))
     def test_dw_video_item(self):
         video = responses.dw_video
-        video = adapt_video_to_video(video)
+        video = map_video_to_video(video)
         expected = Video(
             id='5x5UxqKM7-Y',
             channel_id='UCknLrEdhRCp1aegoMqRaCZg',
@@ -173,60 +174,3 @@ class TestAdaptVideoToVideo(unittest.TestCase):
             num_dislikes=2,
             num_comments=17)
         self.assertEqual(expected, video)
-
-
-class TestGetChannel(unittest.TestCase):
-
-    def test_dw(self):
-        dw_channel_id = 'UCknLrEdhRCp1aegoMqRaCZg'
-        resource = get_resource()
-        get_channel = GetChannel(resource)
-        dw = get_channel(dw_channel_id)
-        self.assertIsInstance(dw, Channel)
-        self.assertEqual(dw_channel_id, dw.id)
-
-
-class TestGetChannelVideos(unittest.TestCase):
-
-    def test_get_uploads_stream(self):
-        dw_channel_id = 'UCknLrEdhRCp1aegoMqRaCZg'
-        resource = get_resource()
-        get_channel_videos = GetChannelVideos(resource)
-        stream = get_channel_videos.get_uploads_stream(dw_channel_id)
-        expected = 'UUknLrEdhRCp1aegoMqRaCZg'
-        self.assertEqual(expected, stream)
-
-    def get_videos_returned(self):
-        dw_channel_id = 'UCknLrEdhRCp1aegoMqRaCZg'
-        resource = get_resource()
-        get_channel_videos = GetChannelVideos(resource)
-        videos = get_channel_videos(
-            channel_id=dw_channel_id,
-            limit=5)
-        self.assertEqual(5, len(videos))
-        for video in videos:
-            self.assertIsInstance(video, Video)
-
-
-class TestGetVideoComments(unittest.TestCase):
-
-    def test_dw_case(self):
-        video_id = '5x5UxqKM7-Y'
-        resource = get_resource()
-        get_video_comments = GetVideoComments(resource)
-        comments = get_video_comments(video_id=video_id, limit=5)
-        self.assertGreaterEqual(len(comments), 5)  # may have replies
-        for comment in comments:
-            self.assertIsInstance(comment, Comment)
-
-
-class TestGetVideo(unittest.TestCase):
-
-    def test_dw_case(self):
-        video_id = '5x5UxqKM7-Y'
-        resource = get_resource()
-        get_video = GetVideo(resource)
-        video = get_video(video_id=video_id)
-        self.assertIsNotNone(video)
-        self.assertIsInstance(video, Video)
-        self.assertEqual(video_id, video.id)
