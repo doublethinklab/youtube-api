@@ -17,9 +17,9 @@ def adapt_channel_to_channel(channel: Dict) -> Channel:
     return Channel(
         id=channel['id'],
         title=channel['snippet']['title'],
-        description=attr_or_none(snippet, 'description'),
-        lang=attr_or_none(snippet, 'defaultLanguage'),
-        country=attr_or_none(snippet, 'country'),
+        description=attr_or_none(snippet, ['description']),
+        lang=attr_or_none(snippet, ['defaultLanguage']),
+        country=attr_or_none(snippet, ['country']),
         created_at=api_string_to_datetime(channel['snippet']['publishedAt']))
 
 
@@ -29,7 +29,7 @@ def adapt_comment_to_comment(comment: Dict, comment_thread_id: str) -> Comment:
         video_id=comment['snippet']['videoId'],
         author_channel_id=comment['snippet']['authorChannelId']['value'],
         comment_thread_id=comment_thread_id,
-        replied_to_comment_id=attr_or_none(comment['snippet'], 'parentId'),
+        replied_to_comment_id=attr_or_none(comment['snippet'], ['parentId']),
         created_at=api_string_to_datetime(comment['snippet']['publishedAt']),
         text=comment['snippet']['textOriginal'],
         num_likes=comment['snippet']['likeCount'],
@@ -67,10 +67,10 @@ def adapt_video_to_video(video: Dict) -> Video:
         title=video['snippet']['title'],
         description=video['snippet']['description'],
         retrieved=datetime.utcnow(),
-        num_views=int(video['statistics']['viewCount']) if 'statistics' in video else None,
-        num_likes=int(video['statistics']['likeCount']) if 'statistics' in video else None,
-        num_dislikes=int(video['statistics']['dislikeCount']) if 'statistics' in video else None,
-        num_comments=int(video['statistics']['commentCount']) if 'statistics' in video else None)
+        num_views=attr_or_none(video, ['statistics', 'viewCount'], int),
+        num_likes=attr_or_none(video, ['statistics', 'likeCount'], int),
+        num_dislikes=attr_or_none(video, ['statistics', 'dislikeCount'], int),
+        num_comments=attr_or_none(video, ['statistics', 'commentCount'], int))
 
 
 def api_string_to_datetime(date_time: str) -> datetime:
@@ -99,15 +99,27 @@ def api_string_to_datetime(date_time: str) -> datetime:
         raise ValueError(date_time)
 
 
-def attr_or_none(mapping: Dict, key: str) -> Union[Any, None]:
-    if key in mapping:
-        return mapping[key]
-    return None
+def attr_or_none(mapping: Dict, keys: List[str], cast_fn=None) \
+        -> Union[Any, None]:
+    for ix, key in enumerate(keys):
+        if key in mapping:
+            if ix == len(keys) - 1:
+                value = mapping[key]
+                if cast_fn:
+                    return cast_fn(value)
+                else:
+                    return value
+            else:
+                mapping = mapping[key]
+        else:
+            return None
 
 
-def get_resource():
+def get_resource(api_key: Optional[str] = None):
+    if not api_key:
+        api_key = os.environ['API_KEY']
     return googleapiclient.discovery.build(
-        'youtube', 'v3', developerKey=os.environ['API_KEY'])
+        'youtube', 'v3', developerKey=api_key)
 
 
 class GoogleApiFunction:
@@ -145,6 +157,17 @@ class GoogleApiFunction:
             request = fn(**kwargs)
             response = request.execute()
             return response
+        except HttpError as e:
+            if e.error_details[0]['reason'] == 'commentsDisabled':
+                print('Comments disabled.')
+                return []
+            if e.error_details[0]['reason'] == 'videoNotFound':
+                print('Video not found.')
+                return []
+            if e.error_details[0]['reason'] == 'quotaExceeded':
+                # TODO: wait?
+                pass
+            raise e
         except Exception as e:
             print('*' * 8)
             print(response)
