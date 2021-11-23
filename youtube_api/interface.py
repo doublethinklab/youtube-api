@@ -3,12 +3,12 @@ from datetime import datetime
 from math import inf
 from typing import List, Optional
 
-from youtube_api.data_structures import Channel, Comment, Video
+from data_structures.youtube import *
 
 
 class GetChannel:
 
-    def __call__(self, channel_id: str) -> Channel:
+    def __call__(self, channel_id: str) -> YouTubeChannel:
         raise NotImplementedError
 
 
@@ -18,19 +18,19 @@ class GetChannelVideos:
                  channel_id: str,
                  limit: int = inf,
                  start: Optional[datetime] = None,
-                 end: Optional[datetime] = None) -> List[Video]:
+                 end: Optional[datetime] = None) -> List[YouTubeVideo]:
         raise NotImplementedError
 
 
 class GetVideoComments:
 
-    def __call__(self, video_id: str, limit: int = inf) -> List[Comment]:
+    def __call__(self, video_id: str, limit: int = inf) -> List[YouTubeComment]:
         raise NotImplementedError
 
 
 class GetVideo:
 
-    def __call__(self, video_id: str) -> Video:
+    def __call__(self, video_id: str) -> YouTubeVideo:
         raise NotImplementedError
 
 

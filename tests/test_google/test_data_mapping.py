@@ -4,7 +4,7 @@ import unittest
 from freezegun import freeze_time
 
 from tests import responses
-from youtube_api.data_structures import *
+from data_structures.youtube import *
 from youtube_api.google.data_mapping import *
 
 
@@ -14,7 +14,7 @@ class TestMapChannelToChannel(unittest.TestCase):
         response = responses.list_channels_dw
         channel = response['items'][0]
         channel = map_channel_to_channel(channel)
-        expected = Channel(
+        expected = YouTubeChannel(
             id='UCknLrEdhRCp1aegoMqRaCZg',
             title='DW News',
             description='Journalism that’s Made for Minds. Follow us for '
@@ -50,7 +50,7 @@ class TestMapCommentToComment(unittest.TestCase):
         comment = responses.dw_comment_thread_1['snippet']['topLevelComment']
         comment = map_comment_to_comment(
             comment, 'UgzsG9SRCC7R1x_89zV4AaABAg')
-        expected = Comment(
+        expected = YouTubeComment(
             id='UgzsG9SRCC7R1x_89zV4AaABAg',
             video_id='5UMT7RUaXBk',
             author_channel_id='UCFD9yhG2kFIR65YadjYR5BA',
@@ -59,8 +59,11 @@ class TestMapCommentToComment(unittest.TestCase):
             created_at=datetime(2021, 7, 26, 8, 26, 42),
             text='Shhh dont speak about it on public. Chinese are very '
                  'sensitive people.\nImram khan, pak caliphe',
-            num_likes=0,
-            retrieved=datetime(2021, 10, 15, 14, 35, 30))
+            stats=[YouTubeCommentStats(
+                comment_id='UgzsG9SRCC7R1x_89zV4AaABAg',
+                collected_at=datetime(2021, 10, 15, 14, 35, 30),
+                num_likes=0,
+                num_replies=0)])
         self.assertEqual(comment, expected)
 
 
@@ -71,7 +74,7 @@ class TestMapCommentThreadToComments(unittest.TestCase):
         comment_thread = responses.dw_comment_thread_with_reply
         comments = map_comment_thread_to_comments(comment_thread)
         expected = [
-            Comment(
+            YouTubeComment(
                 id='UgxqGWcF4_j3P970oQp4AaABAg',
                 video_id='5UMT7RUaXBk',
                 author_channel_id='UCicrxSWGfa8A54N8viAPFTA',
@@ -81,9 +84,14 @@ class TestMapCommentThreadToComments(unittest.TestCase):
                 text="China is both communist and fascist.\r\nAnd now it has "
                      "spread the #corona virus to the world.\r\nDon't buy "
                      "Chinese!\r\nThat 's enough.",
-                num_likes=0,
-                retrieved=datetime(2021, 10, 15, 14, 35, 30)),
-            Comment(
+                stats=[
+                    YouTubeCommentStats(
+                        comment_id='UgxqGWcF4_j3P970oQp4AaABAg',
+                        collected_at=datetime(2021, 10, 15, 14, 35, 30),
+                        num_likes=0,
+                        num_replies=1),
+                ]),
+            YouTubeComment(
                 id='UgxqGWcF4_j3P970oQp4AaABAg.95qRmatwk-z95sC9EDIvTC',
                 video_id='5UMT7RUaXBk',
                 author_channel_id='UC03Wk-Gp9gNg_STwgleQsFA',
@@ -92,8 +100,13 @@ class TestMapCommentThreadToComments(unittest.TestCase):
                 created_at=datetime(2020, 3, 6, 17, 59, 16),
                 text='jhon free  Lol.. Most stuff in the stores is made in '
                      'China',
-                num_likes=0,
-                retrieved=datetime(2021, 10, 15, 14, 35, 30)),
+                stats=[
+                    YouTubeCommentStats(
+                        comment_id='UgxqGWcF4_j3P970oQp4AaABAg.95qRmatwk-z95sC9EDIvTC',
+                        collected_at=datetime(2021, 10, 15, 14, 35, 30),
+                        num_likes=0,
+                        num_replies=0),
+                ]),
         ]
         self.assertEqual(expected, comments)
 
@@ -104,7 +117,7 @@ class TestMapPlaylistItemToVideo(unittest.TestCase):
     def test_dw_case(self):
         playlist_item = responses.dw_playlist_item
         video = map_playlist_item_to_video(playlist_item)
-        expected = Video(
+        expected = YouTubeVideo(
             id='5x5UxqKM7-Y',
             channel_id='UCknLrEdhRCp1aegoMqRaCZg',
             created_at=datetime(2021, 10, 15, 8, 0, 24),
@@ -129,11 +142,7 @@ class TestMapPlaylistItemToVideo(unittest.TestCase):
                         "https://www.instagram.com/dwnews\nFür Videos in "
                         "deutscher Sprache besuchen Sie: "
                         "https://www.youtube.com/dwdeutsch",
-            retrieved=datetime(2021, 10, 15, 14, 35, 30),
-            num_views=None,
-            num_likes=None,
-            num_dislikes=None,
-            num_comments=None)
+            stats=[])
         self.assertEqual(expected, video)
 
 
@@ -143,7 +152,7 @@ class TestMapVideoToVideo(unittest.TestCase):
     def test_dw_video_item(self):
         video = responses.dw_video
         video = map_video_to_video(video)
-        expected = Video(
+        expected = YouTubeVideo(
             id='5x5UxqKM7-Y',
             channel_id='UCknLrEdhRCp1aegoMqRaCZg',
             created_at=datetime(2021, 10, 15, 8, 0, 24),
@@ -168,9 +177,13 @@ class TestMapVideoToVideo(unittest.TestCase):
                         "https://www.instagram.com/dwnews\nFür Videos in "
                         "deutscher Sprache besuchen Sie: "
                         "https://www.youtube.com/dwdeutsch",
-            retrieved=datetime(2021, 10, 15, 14, 35, 30),
-            num_views=2502,
-            num_likes=97,
-            num_dislikes=2,
-            num_comments=17)
+            stats=[
+                YouTubeVideoStats(
+                    video_id='5x5UxqKM7-Y',
+                    collected_at=datetime(2021, 10, 15, 14, 35, 30),
+                    num_views=2502,
+                    num_likes=97,
+                    num_dislikes=2,
+                    num_comments=17),
+            ])
         self.assertEqual(expected, video)

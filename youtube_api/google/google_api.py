@@ -10,7 +10,7 @@ import googleapiclient.discovery
 import googleapiclient.errors
 from googleapiclient.errors import HttpError
 
-from youtube_api.data_structures import Channel, Comment, Video
+from data_structures.youtube import *
 from youtube_api.google.data_mapping import *
 from youtube_api import interface
 
@@ -91,7 +91,7 @@ class GoogleApiFunction:
 
 class GetChannel(GoogleApiFunction, interface.GetChannel):
 
-    def __call__(self, channel_id: str) -> Channel:
+    def __call__(self, channel_id: str) -> YouTubeChannel:
         data = self.paginate(
             fn=self.resource.channels().list,
             id=channel_id,
@@ -101,7 +101,7 @@ class GetChannel(GoogleApiFunction, interface.GetChannel):
             raise ValueError(f'No data: {channel_id}')
         return data[0]
 
-    def extract_data(self, response) -> List[Channel]:
+    def extract_data(self, response) -> List[YouTubeChannel]:
         channels = []
         for channel in response['items']:
             channel = map_channel_to_channel(channel)
@@ -115,7 +115,7 @@ class GetChannelVideos(GoogleApiFunction, interface.GetChannelVideos):
                  channel_id: str,
                  limit: int = inf,
                  start: Optional[datetime] = None,
-                 end: Optional[datetime] = None) -> List[Video]:
+                 end: Optional[datetime] = None) -> List[YouTubeVideo]:
         uploads_stream = self.get_uploads_stream(channel_id)
         stop_fn = partial(self.stop, limit=limit, start=start)
         data = self.paginate(
@@ -129,7 +129,7 @@ class GetChannelVideos(GoogleApiFunction, interface.GetChannelVideos):
             data = data[-limit:]
         return data
 
-    def extract_data(self, response) -> List[Video]:
+    def extract_data(self, response) -> List[YouTubeVideo]:
         videos = []
         for playlist_item in response['items']:
             video = map_playlist_item_to_video(playlist_item)
@@ -145,7 +145,7 @@ class GetChannelVideos(GoogleApiFunction, interface.GetChannelVideos):
             'uploads']
 
     @staticmethod
-    def stop(data: List[Video],
+    def stop(data: List[YouTubeVideo],
              limit: int,
              start: datetime) -> bool:
         return len(data) > limit or min(x.created_at for x in data) < start
@@ -153,7 +153,7 @@ class GetChannelVideos(GoogleApiFunction, interface.GetChannelVideos):
 
 class GetVideoComments(GoogleApiFunction, interface.GetVideoComments):
 
-    def __call__(self, video_id: str, limit: int = inf) -> List[Comment]:
+    def __call__(self, video_id: str, limit: int = inf) -> List[YouTubeComment]:
         page_size = 100  # this is the max
         if page_size > limit:
             page_size = limit
@@ -166,20 +166,20 @@ class GetVideoComments(GoogleApiFunction, interface.GetVideoComments):
             videoId=video_id)
         return data
 
-    def extract_data(self, response) -> List[Comment]:
+    def extract_data(self, response) -> List[YouTubeComment]:
         comments = []
         for comment_thread in response['items']:
             comments += map_comment_thread_to_comments(comment_thread)
         return comments
 
     @staticmethod
-    def stop(data: List[Video], limit: int) -> bool:
+    def stop(data: List[YouTubeVideo], limit: int) -> bool:
         return len(data) >= limit
 
 
 class GetVideo(GoogleApiFunction, interface.GetVideo):
 
-    def __call__(self, video_id: str) -> Video:
+    def __call__(self, video_id: str) -> YouTubeVideo:
         data = self.paginate(
             fn=self.resource.videos().list,
             part='snippet,contentDetails,statistics',
@@ -188,7 +188,7 @@ class GetVideo(GoogleApiFunction, interface.GetVideo):
             raise ValueError(f'No video found for {video_id}.')
         return data[0]
 
-    def extract_data(self, response) -> List[Video]:
+    def extract_data(self, response) -> List[YouTubeVideo]:
         videos = []
         for video in response['items']:
             video = map_video_to_video(video)

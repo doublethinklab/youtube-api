@@ -1,5 +1,8 @@
 #!/bin/bash
 
+export DOCKER_BUILDKIT=1
 docker build \
-    -t doublethinklab/youtube-api:$(cat version) \
+    --no-cache \
+    --ssh github=~/.ssh/github \
+    -t doublethinklab/youtube-api:dev \
     .
