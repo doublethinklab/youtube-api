@@ -67,6 +67,9 @@ def map_comment_to_comment(comment: Dict,
         replied_to_comment_id=attr_or_none(comment['snippet'], ['parentId']),
         created_at=api_string_to_datetime(comment['snippet']['publishedAt']),
         text=comment['snippet']['textOriginal'],
+        channel=YouTubeChannel(
+            id=comment['snippet']['authorChannelId']['value'],
+            title=comment['snippet']['authorDisplayName']),
         stats=[map_comment_to_comment_stats(comment, num_replies)])
 
 

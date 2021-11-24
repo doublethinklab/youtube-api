@@ -59,11 +59,16 @@ class TestMapCommentToComment(unittest.TestCase):
             created_at=datetime(2021, 7, 26, 8, 26, 42),
             text='Shhh dont speak about it on public. Chinese are very '
                  'sensitive people.\nImram khan, pak caliphe',
-            stats=[YouTubeCommentStats(
-                comment_id='UgzsG9SRCC7R1x_89zV4AaABAg',
-                collected_at=datetime(2021, 10, 15, 14, 35, 30),
-                num_likes=0,
-                num_replies=0)])
+            channel=YouTubeChannel(
+                id='UCFD9yhG2kFIR65YadjYR5BA',
+                title='Antonio Ribeiro'),
+            stats=[
+                YouTubeCommentStats(
+                    comment_id='UgzsG9SRCC7R1x_89zV4AaABAg',
+                    collected_at=datetime(2021, 10, 15, 14, 35, 30),
+                    num_likes=0,
+                    num_replies=0)
+            ])
         self.assertEqual(comment, expected)
 
 
@@ -84,6 +89,9 @@ class TestMapCommentThreadToComments(unittest.TestCase):
                 text="China is both communist and fascist.\r\nAnd now it has "
                      "spread the #corona virus to the world.\r\nDon't buy "
                      "Chinese!\r\nThat 's enough.",
+                channel=YouTubeChannel(
+                    id='UCicrxSWGfa8A54N8viAPFTA',
+                    title='jhon free'),
                 stats=[
                     YouTubeCommentStats(
                         comment_id='UgxqGWcF4_j3P970oQp4AaABAg',
@@ -100,6 +108,9 @@ class TestMapCommentThreadToComments(unittest.TestCase):
                 created_at=datetime(2020, 3, 6, 17, 59, 16),
                 text='jhon free  Lol.. Most stuff in the stores is made in '
                      'China',
+                channel=YouTubeChannel(
+                    id='UC03Wk-Gp9gNg_STwgleQsFA',
+                    title='Hal Asimov'),
                 stats=[
                     YouTubeCommentStats(
                         comment_id='UgxqGWcF4_j3P970oQp4AaABAg.95qRmatwk-z95sC9EDIvTC',
