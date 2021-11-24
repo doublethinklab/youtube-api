@@ -1,10 +1,19 @@
 import setuptools
 
 
+def fix_requirement(x):
+    if x.startswith('git+ssh'):
+        package = x.split('.git')[0].split('/')[-1]
+        return f'{package} @ {x}'
+    else:
+        return x
+
+
 with open('version') as f:
     version = f.read().strip()
 with open('requirements.txt') as f:
     required = f.read().splitlines()
+    required = [fix_requirement(x) for x in required]
 
 
 setuptools.setup(
