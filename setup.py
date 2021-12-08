@@ -2,7 +2,7 @@ import setuptools
 
 
 def fix_requirement(x):
-    if x.startswith('git+ssh'):
+    if x.startswith('git+ssh') or x.startswith('git+git'):
         package = x.split('.git')[0].split('/')[-1]
         return f'{package} @ {x}'
     else:
