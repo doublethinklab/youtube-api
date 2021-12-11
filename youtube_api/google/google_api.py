@@ -22,12 +22,86 @@ def get_resource(api_key: Optional[str] = None):
         'youtube', 'v3', developerKey=api_key)
 
 
+class ApiKeyManager:
+
+    def __init__(self, api_keys: List[str], wait_mins: int = 60):
+        self.api_key_to_exceeded_time = {
+            key: datetime(2000, 1, 1) for key in api_keys}
+        self.wait_mins = wait_mins
+
+    @staticmethod
+    def _get_mins_diff(exceeded_time: datetime) -> int:
+        diff_secs = (datetime.now() - exceeded_time).total_seconds()
+        return int(round(diff_secs / 60, 0))
+
+    def _get_next_available_key(self) -> Union[str, None]:
+        logging.info('Looking for next available api key...')
+        key_diff = [
+            {'key': k, 'diff': self._get_mins_diff(t)}
+            for k, t in self.api_key_to_exceeded_time.items()]
+        for x in key_diff:
+            print('Api key "%s" report exceeded %s mins ago.'
+                  % (x['key'], x['diff']))
+        key_diff = list(reversed(sorted(key_diff, key=lambda x: x['diff'])))
+        next_key, diff = key_diff[0]['key'], key_diff[0]['diff']
+        if diff < self.wait_mins:
+            logging.info(f'No keys expired less than {self.wait_mins} mins '
+                         f'ago.')
+            return None
+        else:
+            logging.info(f'Returning new api key "{next_key}".')
+            return next_key
+
+    def get_key(self) -> str:
+        while True:
+            api_key = self._get_next_available_key()
+            if not api_key:
+                time.sleep(self.wait_mins * 60)
+            else:
+                return api_key
+
+    def report_quota_exceeded(self, api_key: str) -> None:
+        exceeded_time = datetime.now()
+        exceeded_time_str = exceeded_time.strftime('%Y-%m-%d %H:%M:%S')
+        logging.info(f'Api key "{api_key}" quota reported '
+                     f'exceeded at {exceeded_time_str}.')
+        self.api_key_to_exceeded_time[api_key] = exceeded_time
+
+
+class ResourceManager:
+
+    def __init__(self, api_key_manager: ApiKeyManager):
+        self.api_key_manager = api_key_manager
+        # since getting a resource can involve waiting, only try when asked
+        # for a resource
+        self.current_api_key = None
+        self.current_resource = None
+
+    def _set_current_resource(self) -> None:
+        self.current_api_key = self.api_key_manager.get_key()
+        self.current_resource = get_resource(self.current_api_key)
+
+    def get_resource(self) -> googleapiclient.discovery.Resource:
+        if not self.current_resource:
+            self._set_current_resource()
+        return self.current_resource
+
+    def report_quota_exceeded(self) -> None:
+        self.api_key_manager.report_quota_exceeded(self.current_api_key)
+        self.current_api_key = None
+        self.current_resource = None
+
+
 class GoogleApiFunction:
 
-    def __init__(self, resource):
-        self.resource = resource
+    def __init__(self, resource_manager: ResourceManager):
+        self.resource_manager = resource_manager
 
     def extract_data(self, response) -> List[Any]:
+        raise NotImplementedError
+
+    def get_function(self, resource: googleapiclient.discovery.Resource) \
+            -> Callable:
         raise NotImplementedError
 
     @staticmethod
@@ -37,23 +111,23 @@ class GoogleApiFunction:
             else None
 
     def paginate(self,
-                 fn: Callable,
                  stop_fn: Callable = lambda x: False,
                  **kwargs) -> List[Any]:
-        response = self.wait_while_rate_limited(fn, **kwargs)
+        response = self.wait_while_rate_limited(**kwargs)
         data = self.extract_data(response)
         next_page_token = self.get_next_page(response)
         while next_page_token and not stop_fn(data):
             kwargs['pageToken'] = next_page_token
-            response = self.wait_while_rate_limited(fn, **kwargs)
+            response = self.wait_while_rate_limited(**kwargs)
             data += self.extract_data(response)
             next_page_token = self.get_next_page(response)
         return data
 
-    @staticmethod
-    def wait_while_rate_limited(fn, **kwargs):
+    def wait_while_rate_limited(self, **kwargs):
         while True:
             try:
+                resource = self.resource_manager.get_resource()
+                fn = self.get_function(resource)
                 request = fn(**kwargs)
                 response = request.execute()
                 return response
@@ -66,7 +140,8 @@ class GoogleApiFunction:
                     return []
                 elif e.error_details[0]['reason'] == 'quotaExceeded':
                     logging.warning('Rate limited. Waiting one hour...')
-                    time.sleep(60 * 60)
+                    self.resource_manager.report_quota_exceeded()
+                    # NOTE: waiting handled by resource_factory.api_key_manager
                 elif e.error_details[0]['reason'] == 'SERVICE_UNAVAILABLE':
                     # assuming this is transient
                     logging.warning('Service unavailable. Waiting 5 mins...')
@@ -93,7 +168,6 @@ class GetChannel(GoogleApiFunction, interface.GetChannel):
 
     def __call__(self, channel_id: str) -> YouTubeChannel:
         data = self.paginate(
-            fn=self.resource.channels().list,
             id=channel_id,
             part='contentDetails,snippet,statistics,topicDetails')
         # TODO: proper way to know that no data is returned?
@@ -108,6 +182,10 @@ class GetChannel(GoogleApiFunction, interface.GetChannel):
             channels.append(channel)
         return channels
 
+    def get_function(self, resource: googleapiclient.discovery.Resource) \
+            -> Callable:
+        return resource.channels().list
+
 
 class GetChannelVideos(GoogleApiFunction, interface.GetChannelVideos):
 
@@ -119,7 +197,6 @@ class GetChannelVideos(GoogleApiFunction, interface.GetChannelVideos):
         uploads_stream = self.get_uploads_stream(channel_id)
         stop_fn = partial(self.stop, limit=limit, start=start)
         data = self.paginate(
-            fn=self.resource.playlistItems().list,
             stop_fn=stop_fn,
             part='snippet',
             playlistId=uploads_stream)
@@ -136,8 +213,13 @@ class GetChannelVideos(GoogleApiFunction, interface.GetChannelVideos):
             videos.append(video)
         return videos
 
+    def get_function(self, resource: googleapiclient.discovery.Resource) \
+            -> Callable:
+        return resource.playlistItems().list
+
     def get_uploads_stream(self, channel_id: str) -> str:
-        request = self.resource.channels().list(
+        resource = self.resource_manager.get_resource()
+        request = resource.channels().list(
             part='contentDetails',
             id=channel_id)
         response = request.execute()
@@ -159,7 +241,6 @@ class GetVideoComments(GoogleApiFunction, interface.GetVideoComments):
             page_size = limit
         stop_fn = partial(self.stop, limit=limit)
         data = self.paginate(
-            fn=self.resource.commentThreads().list,
             stop_fn=stop_fn,
             part='snippet,replies',
             maxResults=page_size,
@@ -172,6 +253,10 @@ class GetVideoComments(GoogleApiFunction, interface.GetVideoComments):
             comments += map_comment_thread_to_comments(comment_thread)
         return comments
 
+    def get_function(self, resource: googleapiclient.discovery.Resource) \
+            -> Callable:
+        return resource.commentThreads().list
+
     @staticmethod
     def stop(data: List[YouTubeVideo], limit: int) -> bool:
         return len(data) >= limit
@@ -181,7 +266,6 @@ class GetVideo(GoogleApiFunction, interface.GetVideo):
 
     def __call__(self, video_id: str) -> YouTubeVideo:
         data = self.paginate(
-            fn=self.resource.videos().list,
             part='snippet,contentDetails,statistics',
             id=video_id)
         if len(data) == 0:
@@ -194,3 +278,19 @@ class GetVideo(GoogleApiFunction, interface.GetVideo):
             video = map_video_to_video(video)
             videos.append(video)
         return videos
+
+    def get_function(self, resource: googleapiclient.discovery.Resource) \
+            -> Callable:
+        return resource.videos().list
+
+
+class GoogleYouTubeApi(interface.YouTubeApi):
+
+    def __init__(self, api_keys: List[str]):
+        self.api_key_manager = ApiKeyManager(api_keys)
+        self.resource_manager = ResourceManager(self.api_key_manager)
+        super().__init__(
+            get_channel=GetChannel(self.resource_manager),
+            get_channel_videos=GetChannelVideos(self.resource_manager),
+            get_video_comments=GetVideoComments(self.resource_manager),
+            get_video=GetVideo(self.resource_manager))

@@ -34,7 +34,7 @@ class GetVideo:
         raise NotImplementedError
 
 
-class YouTubeApiBase:
+class YouTubeApi:
     """Interface definition.
 
     With each function in the interface defined by classes above, to implement

@@ -2,6 +2,7 @@
 oauth.json
 Untitled.ipynb
 api.key
+api_keys
 
 # proprietary LIWC dictionaries must not be uploaded
 common/nlp/lexicons/liwc/proprietary/

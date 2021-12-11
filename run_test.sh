@@ -6,4 +6,4 @@ docker run \
     -w /youtube-api \
     -e API_KEY=$(cat api.key) \
         doublethinklab/youtube-api:dev \
-            python -m unittest discover
+            python -m unittest $1
