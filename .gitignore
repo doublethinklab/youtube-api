@@ -3,6 +3,7 @@ oauth.json
 Untitled.ipynb
 api.key
 api_keys
+Scratch.ipynb
 
 # proprietary LIWC dictionaries must not be uploaded
 common/nlp/lexicons/liwc/proprietary/
