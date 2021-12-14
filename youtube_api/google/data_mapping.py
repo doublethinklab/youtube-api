@@ -126,7 +126,21 @@ def map_video_to_video(video: Dict) -> YouTubeVideo:
         created_at=api_string_to_datetime(video['snippet']['publishedAt']),
         title=video['snippet']['title'],
         description=video['snippet']['description'],
+        duration=video['contentDetails']['duration'],
+        dimension=video['contentDetails']['dimension'],
+        definition=video['contentDetails']['definition'],
+        projection=video['contentDetails']['projection'],
         stats=[map_video_to_video_stats(video)])
+
+
+def map_video_search_result_to_video(result: Dict) -> YouTubeVideo:
+    return YouTubeVideo(
+        id=result['id']['videoId'],
+        channel_id=result['snippet']['channelId'],
+        created_at=api_string_to_datetime(result['snippet']['publishedAt']),
+        title=result['snippet']['title'],
+        description=result['snippet']['description'],
+        stats=[])
 
 
 def map_video_to_video_stats(video: Dict) -> YouTubeVideoStats:

@@ -118,8 +118,9 @@ class ResourceManager:
 
 class GoogleApiFunction:
 
-    def __init__(self, resource_manager: ResourceManager):
+    def __init__(self, resource_manager: ResourceManager, debug: bool = False):
         self.resource_manager = resource_manager
+        self.debug = debug
 
     @staticmethod
     def _datetime_to_string_for_api(date_time: datetime) -> str:
@@ -158,6 +159,8 @@ class GoogleApiFunction:
                 fn = self.get_function(resource)
                 request = fn(**kwargs)
                 response = request.execute()
+                if self.debug:
+                    print(response)
                 return response
             except HttpError as e:
                 if e.error_details[0]['reason'] == 'commentsDisabled':
@@ -319,6 +322,9 @@ class Search(GoogleApiFunction, interface.Search):
             raise ValueError(f'Unexpected `order`: {order}.')
         if type not in self.search_types:
             raise ValueError(f'Unexpected `type`: {type}.')
+        if type in ['channel', 'playlist']:
+            raise NotImplementedError('Have not implemented channel or '
+                                      'playlist search yet.')
         query = self._escape_pipe(query)
         stop_fn = partial(stop_when_at_limit, limit=limit)
         kwargs = dict(
@@ -342,11 +348,11 @@ class Search(GoogleApiFunction, interface.Search):
         data = []
         for x in response['items']:
             if self.current_type == 'video':
-                x = map_video_to_video(x)
+                x = map_video_search_result_to_video(x)
             elif self.current_type == 'channel':
-                x = map_channel_to_channel(x)
+                raise NotImplementedError
             elif self.current_type == 'playlist':
-                x = map_playlist_item_to_video(x)
+                raise NotImplementedError
             else:
                 raise ValueError(f'Unexpected `type`: {self.current_type}.')
             data.append(x)

@@ -188,6 +188,10 @@ class TestMapVideoToVideo(unittest.TestCase):
                         "https://www.instagram.com/dwnews\nFür Videos in "
                         "deutscher Sprache besuchen Sie: "
                         "https://www.youtube.com/dwdeutsch",
+            duration='PT40S',
+            dimension='2d',
+            definition='hd',
+            projection='rectangular',
             stats=[
                 YouTubeVideoStats(
                     video_id='5x5UxqKM7-Y',
@@ -197,4 +201,19 @@ class TestMapVideoToVideo(unittest.TestCase):
                     num_dislikes=2,
                     num_comments=17),
             ])
+        self.assertEqual(expected, video)
+
+
+class TestMapVideoSearchResultsToVideo(unittest.TestCase):
+
+    def test_case_1(self):
+        response = responses.search_video_response['items'][0]
+        video = map_video_search_result_to_video(response)
+        expected = YouTubeVideo(
+            id='asnfjccX25I',
+            channel_id='UClOKvk6VitvUv2BfEvR6_DQ',
+            created_at=datetime(2021, 3, 25, 10, 42, 3),
+            title='Picking cotton by machine in Xinjiang，China',
+            description="Picking cotton by machine in Xinjiang,China.",
+            stats=[])
         self.assertEqual(expected, video)

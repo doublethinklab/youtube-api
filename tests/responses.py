@@ -224,3 +224,39 @@ dw_video = {'kind': 'youtube#video',
     'dislikeCount': '2',
     'favoriteCount': '0',
     'commentCount': '17'}}
+
+
+search_video_response = {
+    'kind': 'youtube#searchListResponse',
+    'etag': 'mFsCfQdvWUCS97dqNLbTjbOtFXM',
+    'regionCode': 'JP',
+    'pageInfo': {
+        'totalResults': 2,
+        'resultsPerPage': 1},
+    'items': [
+        {'kind': 'youtube#searchResult',
+         'etag': 'obYpwX-5Z0zWZuJXA5n7TtOra9I',
+         'id': {
+             'kind': 'youtube#video',
+             'videoId': 'asnfjccX25I'},
+         'snippet': {
+             'publishedAt': '2021-03-25T10:42:03Z',
+             'channelId': 'UClOKvk6VitvUv2BfEvR6_DQ',
+             'title': 'Picking cotton by machine in Xinjiang，China',
+             'description': 'Picking cotton by machine in Xinjiang,China.',
+             'thumbnails': {
+                 'default': {
+                     'url': 'https://i.ytimg.com/vi/asnfjccX25I/default.jpg',
+                     'width': 120,
+                     'height': 90},
+                 'medium': {
+                     'url': 'https://i.ytimg.com/vi/asnfjccX25I/mqdefault.jpg',
+                     'width': 320,
+                     'height': 180},
+                 'high': {
+                     'url': 'https://i.ytimg.com/vi/asnfjccX25I/hqdefault.jpg',
+                     'width': 480,
+                     'height': 360}},
+             'channelTitle': 'Kelly Sydney',
+             'liveBroadcastContent': 'none',
+             'publishTime': '2021-03-25T10:42:03Z'}}]}
