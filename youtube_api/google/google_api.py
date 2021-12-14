@@ -22,6 +22,18 @@ def get_resource(api_key: Optional[str] = None):
         'youtube', 'v3', developerKey=api_key)
 
 
+def stop_when_at_limit(data: List[Any], limit: int) -> bool:
+    return len(data) >= limit
+
+
+def stop_when_at_size_or_date_limit(data: List[Any],
+                                    limit: int,
+                                    start: datetime) -> bool:
+    # assumes working backwards through time
+    # assumes Any is an object with a `created_at` property
+    return len(data) > limit or min(x.created_at for x in data) < start
+
+
 class ApiKeyManager:
 
     def __init__(self, api_keys: List[str], wait_mins: int = 60):
@@ -40,8 +52,8 @@ class ApiKeyManager:
             {'key': k, 'diff': self._get_mins_diff(t)}
             for k, t in self.api_key_to_exceeded_time.items()]
         for x in key_diff:
-            print('Api key "%s" report exceeded %s mins ago.'
-                  % (x['key'], x['diff']))
+            logging.info('Api key "%s" status: reported exceeded %s mins ago.'
+                         % (x['key'], x['diff']))
         key_diff = list(reversed(sorted(key_diff, key=lambda x: x['diff'])))
         next_key, diff = key_diff[0]['key'], key_diff[0]['diff']
         if diff < self.wait_mins:
@@ -96,6 +108,10 @@ class GoogleApiFunction:
 
     def __init__(self, resource_manager: ResourceManager):
         self.resource_manager = resource_manager
+
+    @staticmethod
+    def _datetime_to_string_for_api(date_time: datetime) -> str:
+        return date_time.strftime('%Y-%m-%dT%H:%M:%SZ')
 
     def extract_data(self, response) -> List[Any]:
         raise NotImplementedError
@@ -195,7 +211,10 @@ class GetChannelVideos(GoogleApiFunction, interface.GetChannelVideos):
                  start: Optional[datetime] = None,
                  end: Optional[datetime] = None) -> List[YouTubeVideo]:
         uploads_stream = self.get_uploads_stream(channel_id)
-        stop_fn = partial(self.stop, limit=limit, start=start)
+        stop_fn = partial(
+            stop_when_at_size_or_date_limit,
+            limit=limit,
+            start=start)
         data = self.paginate(
             stop_fn=stop_fn,
             part='snippet',
@@ -226,12 +245,6 @@ class GetChannelVideos(GoogleApiFunction, interface.GetChannelVideos):
         return response['items'][0]['contentDetails']['relatedPlaylists'][
             'uploads']
 
-    @staticmethod
-    def stop(data: List[YouTubeVideo],
-             limit: int,
-             start: datetime) -> bool:
-        return len(data) > limit or min(x.created_at for x in data) < start
-
 
 class GetVideoComments(GoogleApiFunction, interface.GetVideoComments):
 
@@ -239,7 +252,7 @@ class GetVideoComments(GoogleApiFunction, interface.GetVideoComments):
         page_size = 100  # this is the max
         if page_size > limit:
             page_size = limit
-        stop_fn = partial(self.stop, limit=limit)
+        stop_fn = partial(stop_when_at_limit, limit=limit)
         data = self.paginate(
             stop_fn=stop_fn,
             part='snippet,replies',
@@ -256,10 +269,6 @@ class GetVideoComments(GoogleApiFunction, interface.GetVideoComments):
     def get_function(self, resource: googleapiclient.discovery.Resource) \
             -> Callable:
         return resource.commentThreads().list
-
-    @staticmethod
-    def stop(data: List[YouTubeVideo], limit: int) -> bool:
-        return len(data) >= limit
 
 
 class GetVideo(GoogleApiFunction, interface.GetVideo):
@@ -284,13 +293,69 @@ class GetVideo(GoogleApiFunction, interface.GetVideo):
         return resource.videos().list
 
 
+class Search(GoogleApiFunction, interface.Search):
+
+    def __call__(self,
+                 query: str,
+                 start: Optional[datetime] = None,
+                 end: Optional[datetime] = None,
+                 type: str = 'video',
+                 order: str = 'rating',
+                 limit: int = inf,
+                 channel_id: Optional[str] = None):
+        if order not in self.search_orders:
+            raise ValueError(f'Unexpected `order`: {order}.')
+        if type not in self.search_types:
+            raise ValueError(f'Unexpected `type`: {type}.')
+        query = self._escape_pipe(query)
+        stop_fn = partial(stop_when_at_limit, limit=limit)
+        kwargs = dict(
+            part='snippet',
+            q=query,
+            maxResults=50,
+            order=order,
+            type=type,
+            stop_fn=stop_fn)
+        self.current_type = type
+        if channel_id:
+            kwargs['channelId'] = channel_id
+        if start:
+            kwargs['publishedAfter'] = self._datetime_to_string_for_api(start)
+        if end:
+            kwargs['publishedBefore'] = self._datetime_to_string_for_api(end)
+        data = self.paginate(**kwargs)
+        return data
+
+    def extract_data(self, response) -> List[YouTubeVideo]:
+        data = []
+        for x in response['items']:
+            if self.current_type == 'video':
+                x = map_video_to_video(x)
+            elif self.current_type == 'channel':
+                x = map_channel_to_channel(x)
+            elif self.current_type == 'playlist':
+                x = map_playlist_item_to_video(x)
+            else:
+                raise ValueError(f'Unexpected `type`: {self.current_type}.')
+            data.append(x)
+        return data
+
+    def get_function(self, resource: googleapiclient.discovery.Resource) \
+            -> Callable:
+        return resource.search().list
+
+
 class GoogleYouTubeApi(interface.YouTubeApi):
 
-    def __init__(self, api_keys: List[str]):
+    def __init__(self, api_keys: Optional[List[str]] = None):
+        # try this by default
+        if not api_keys:
+            api_keys = [os.environ['API_KEY']]
         self.api_key_manager = ApiKeyManager(api_keys)
         self.resource_manager = ResourceManager(self.api_key_manager)
         super().__init__(
             get_channel=GetChannel(self.resource_manager),
             get_channel_videos=GetChannelVideos(self.resource_manager),
             get_video_comments=GetVideoComments(self.resource_manager),
-            get_video=GetVideo(self.resource_manager))
+            get_video=GetVideo(self.resource_manager),
+            search=Search(self.resource_manager))

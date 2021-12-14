@@ -75,6 +75,15 @@ class TestResourceManager(unittest.TestCase):
         self.assertIsNone(resource_manager.current_resource)
 
 
+class TestGoogleApiFunction(unittest.TestCase):
+
+    def test_datetime_to_string_for_api(self):
+        date_time = datetime(2021, 1, 28, 2, 33, 32)
+        expected = '2021-01-28T02:33:32Z'
+        result = GoogleApiFunction._datetime_to_string_for_api(date_time)
+        self.assertEqual(expected, result)
+
+
 class TestGetChannel(unittest.TestCase):
 
     def test_dw(self):
@@ -130,3 +139,27 @@ class TestGetVideo(unittest.TestCase):
         self.assertIsNotNone(video)
         self.assertIsInstance(video, YouTubeVideo)
         self.assertEqual(video_id, video.id)
+
+
+class TestSearch(unittest.TestCase):
+
+    def test_channel_id_and_start_and_end_dates(self):
+        # Kelly Sydney (UClOKvk6VitvUv2BfEvR6_DQ)
+        # video1:
+        #     title: 90% of the cotton in Xinjiang, China is picked by machines.
+        #            How can it be called forced labor?
+        #     published: 2021-03-25 04:04UTC
+        # video2:
+        #     title: Picking cotton by machine in Xinjiang，China
+        #     published: 2021-03-25 10:42UTC
+        resource_manager = get_resource_manager()
+        search = Search(resource_manager)
+        data = search(
+            query='xinjiang cotton',
+            start=datetime(2021, 3, 25, 10, 0, 0),
+            end=datetime(2021, 3, 25, 12, 0, 0),
+            channel_id='UClOKvk6VitvUv2BfEvR6_DQ')
+        self.assertEqual(1, len(data))
+        video = data[0]
+        self.assertEqual(
+            'Picking cotton by machine in Xinjiang，China', video.title)
