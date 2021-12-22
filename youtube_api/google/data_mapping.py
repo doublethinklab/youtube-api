@@ -116,12 +116,14 @@ def map_playlist_item_to_video(playlist_item: Dict) -> YouTubeVideo:
         created_at=api_string_to_datetime(playlist_item['snippet']['publishedAt']),
         title=playlist_item['snippet']['title'],
         description=playlist_item['snippet']['description'],
-        stats=[])
+        stats=[],
+        tags=[])
 
 
 def map_video_to_video(video: Dict) -> YouTubeVideo:
+    video_id = video['id']
     return YouTubeVideo(
-        id=video['id'],
+        id=video_id,
         channel_id=video['snippet']['channelId'],
         created_at=api_string_to_datetime(video['snippet']['publishedAt']),
         title=video['snippet']['title'],
@@ -130,7 +132,9 @@ def map_video_to_video(video: Dict) -> YouTubeVideo:
         dimension=video['contentDetails']['dimension'],
         definition=video['contentDetails']['definition'],
         projection=video['contentDetails']['projection'],
-        stats=[map_video_to_video_stats(video)])
+        stats=[map_video_to_video_stats(video)],
+        tags=[YouTubeVideoTag(video_id=video_id, tag=tag)
+              for tag in video['snippet']['tags']])
 
 
 def map_video_search_result_to_video(result: Dict) -> YouTubeVideo:
@@ -140,7 +144,8 @@ def map_video_search_result_to_video(result: Dict) -> YouTubeVideo:
         created_at=api_string_to_datetime(result['snippet']['publishedAt']),
         title=result['snippet']['title'],
         description=result['snippet']['description'],
-        stats=[])
+        stats=[],
+        tags=[])
 
 
 def map_video_to_video_stats(video: Dict) -> YouTubeVideoStats:

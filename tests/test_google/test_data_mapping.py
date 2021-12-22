@@ -153,7 +153,8 @@ class TestMapPlaylistItemToVideo(unittest.TestCase):
                         "https://www.instagram.com/dwnews\nFür Videos in "
                         "deutscher Sprache besuchen Sie: "
                         "https://www.youtube.com/dwdeutsch",
-            stats=[])
+            stats=[],
+            tags=[])
         self.assertEqual(expected, video)
 
 
@@ -163,6 +164,12 @@ class TestMapVideoToVideo(unittest.TestCase):
     def test_dw_video_item(self):
         video = responses.dw_video
         video = map_video_to_video(video)
+        tags = [
+            'DW News',
+            'Cumbre Vieja',
+            'la palma',
+            'la palma volcano',
+            'volcano eruption']
         expected = YouTubeVideo(
             id='5x5UxqKM7-Y',
             channel_id='UCknLrEdhRCp1aegoMqRaCZg',
@@ -200,6 +207,10 @@ class TestMapVideoToVideo(unittest.TestCase):
                     num_likes=97,
                     num_dislikes=2,
                     num_comments=17),
+            ],
+            tags=[
+                YouTubeVideoTag(video_id='5x5UxqKM7-Y', tag=tag)
+                for tag in tags
             ])
         self.assertEqual(expected, video)
 
@@ -215,5 +226,6 @@ class TestMapVideoSearchResultsToVideo(unittest.TestCase):
             created_at=datetime(2021, 3, 25, 10, 42, 3),
             title='Picking cotton by machine in Xinjiang，China',
             description="Picking cotton by machine in Xinjiang,China.",
-            stats=[])
+            stats=[],
+            tags=[])
         self.assertEqual(expected, video)

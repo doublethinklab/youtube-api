@@ -9,7 +9,7 @@ from youtube_api.google.google_api import *
 
 
 def get_resource_manager():
-    api_key_manager = ApiKeyManager(api_keys=[os.environ['API_KEY']])
+    api_key_manager = ApiKeyManager()
     resource_manager = ResourceManager(api_key_manager)
     return resource_manager
 
