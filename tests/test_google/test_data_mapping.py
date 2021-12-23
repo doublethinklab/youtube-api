@@ -71,6 +71,29 @@ class TestMapCommentToComment(unittest.TestCase):
             ])
         self.assertEqual(comment, expected)
 
+    @freeze_time(datetime(2021, 10, 15, 14, 35, 30))
+    def test_buggy_comment_1(self):
+        comment = responses.buggy_comment1
+        comment = map_comment_to_comment(
+            comment, 'whatever')
+        expected = YouTubeComment(
+            id='UgxPf-iLTjain_B66y94AaABAg',
+            video_id='PKkp3yjl0s4',
+            author_channel_id=None,
+            comment_thread_id='whatever',
+            replied_to_comment_id=None,
+            created_at=datetime(2021, 10, 5, 7, 5, 39),
+            text='Good!',
+            channel=None,
+            stats=[
+                YouTubeCommentStats(
+                    comment_id='UgxPf-iLTjain_B66y94AaABAg',
+                    collected_at=datetime(2021, 10, 15, 14, 35, 30),
+                    num_likes=0,
+                    num_replies=0)
+            ])
+        self.assertEqual(comment, expected)
+
 
 class TestMapCommentThreadToComments(unittest.TestCase):
 

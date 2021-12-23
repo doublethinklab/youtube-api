@@ -71,17 +71,23 @@ def map_channel_to_channel(channel: Dict) -> YouTubeChannel:
 def map_comment_to_comment(comment: Dict,
                            comment_thread_id: str,
                            num_replies: int = 0) -> YouTubeComment:
+    author_channel_id = attr_or_none(
+            comment['snippet'], ['authorChannelId', 'value'])
+    if author_channel_id is None:
+        channel = None
+    else:
+        channel = YouTubeChannel(
+            id=author_channel_id,
+            title=comment['snippet']['authorDisplayName'])
     return YouTubeComment(
         id=comment['id'],
         video_id=comment['snippet']['videoId'],
-        author_channel_id=comment['snippet']['authorChannelId']['value'],
+        author_channel_id=author_channel_id,
         comment_thread_id=comment_thread_id,
         replied_to_comment_id=attr_or_none(comment['snippet'], ['parentId']),
         created_at=api_string_to_datetime(comment['snippet']['publishedAt']),
         text=comment['snippet']['textOriginal'],
-        channel=YouTubeChannel(
-            id=comment['snippet']['authorChannelId']['value'],
-            title=comment['snippet']['authorDisplayName']),
+        channel=channel,
         stats=[map_comment_to_comment_stats(comment, num_replies)])
 
 

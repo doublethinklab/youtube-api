@@ -260,3 +260,22 @@ search_video_response = {
              'channelTitle': 'Kelly Sydney',
              'liveBroadcastContent': 'none',
              'publishTime': '2021-03-25T10:42:03Z'}}]}
+
+
+buggy_comment1 = {
+    'kind': 'youtube#comment',
+    'etag': '_EleLScYmB_7vLprrOu4-Plo4zA',
+    'id': 'UgxPf-iLTjain_B66y94AaABAg',
+    'snippet': {
+        'videoId': 'PKkp3yjl0s4',
+        'textDisplay': 'Good!',
+        'textOriginal': 'Good!',
+        'authorDisplayName': '',
+        'authorProfileImageUrl': 'https://yt3.ggpht.com/a/default-user=s48',
+        'authorChannelUrl': '',
+        'canRate': True,
+        'viewerRating': 'none',
+        'likeCount': 0,
+        'publishedAt': '2021-10-05T07:05:39Z',
+        'updatedAt': '2021-10-05T07:05:39Z'}
+}
