@@ -122,6 +122,11 @@ def map_playlist_item_to_video(playlist_item: Dict) -> YouTubeVideo:
 
 def map_video_to_video(video: Dict) -> YouTubeVideo:
     video_id = video['id']
+    if 'tags' not in video['snippet']:
+        tags = []
+    else:
+        tags = [YouTubeVideoTag(video_id=video_id, tag=tag)
+                for tag in video['snippet']['tags']]
     return YouTubeVideo(
         id=video_id,
         channel_id=video['snippet']['channelId'],
@@ -133,8 +138,7 @@ def map_video_to_video(video: Dict) -> YouTubeVideo:
         definition=video['contentDetails']['definition'],
         projection=video['contentDetails']['projection'],
         stats=[map_video_to_video_stats(video)],
-        tags=[YouTubeVideoTag(video_id=video_id, tag=tag)
-              for tag in video['snippet']['tags']])
+        tags=tags)
 
 
 def map_video_search_result_to_video(result: Dict) -> YouTubeVideo:
