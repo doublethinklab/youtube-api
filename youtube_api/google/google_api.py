@@ -3,6 +3,7 @@ from functools import partial
 import logging
 from math import inf
 import os
+import random
 import time
 from typing import Any, Callable, Dict, List, Optional, Union
 
@@ -49,6 +50,7 @@ class ApiKeyManager:
     def __init__(self,
                  api_keys: List[str] = get_keys(),
                  wait_mins: int = 60):
+        random.shuffle(api_keys)
         self.api_key_to_exceeded_time = {
             key: datetime(2000, 1, 1) for key in api_keys}
         self.wait_mins = wait_mins

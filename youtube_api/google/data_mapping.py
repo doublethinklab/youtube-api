@@ -46,6 +46,17 @@ def attr_or_none(mapping: Dict, keys: List[str], cast_fn=None) \
             return None
 
 
+def print_input_on_error(fn):
+    def inner(data_input, *args, **kwargs):
+        try:
+            return fn(data_input, *args, **kwargs)
+        except Exception as e:
+            print(data_input)
+            raise e
+    return inner
+
+
+@print_input_on_error
 def map_channel_to_channel(channel: Dict) -> YouTubeChannel:
     return YouTubeChannel(
         id=channel['id'],
@@ -56,6 +67,7 @@ def map_channel_to_channel(channel: Dict) -> YouTubeChannel:
         created_at=api_string_to_datetime(channel['snippet']['publishedAt']))
 
 
+@print_input_on_error
 def map_comment_to_comment(comment: Dict,
                            comment_thread_id: str,
                            num_replies: int = 0) -> YouTubeComment:
@@ -73,12 +85,13 @@ def map_comment_to_comment(comment: Dict,
         stats=[map_comment_to_comment_stats(comment, num_replies)])
 
 
+@print_input_on_error
 def map_comment_thread_to_comments(comment_thread: Dict) \
         -> List[YouTubeComment]:
     comments = []
     comment_thread_id = comment_thread['id']
     top_level_comment = map_comment_to_comment(
-        comment=comment_thread['snippet']['topLevelComment'],
+        comment_thread['snippet']['topLevelComment'],
         comment_thread_id=comment_thread_id,
         num_replies=comment_thread['snippet']['totalReplyCount'])
     comments.append(top_level_comment)
@@ -89,6 +102,7 @@ def map_comment_thread_to_comments(comment_thread: Dict) \
     return comments
 
 
+@print_input_on_error
 def map_comment_to_comment_stats(comment: Dict, num_replies: int = 0) \
         -> YouTubeCommentStats:
     # NOTE: by definition comments other than root have 0
@@ -100,6 +114,7 @@ def map_comment_to_comment_stats(comment: Dict, num_replies: int = 0) \
         num_replies=num_replies)
 
 
+@print_input_on_error
 def map_comment_thread_to_comment_stats(comment_thread: Dict) \
         -> YouTubeCommentStats:
     return YouTubeCommentStats(
@@ -109,6 +124,7 @@ def map_comment_thread_to_comment_stats(comment_thread: Dict) \
         num_replies=comment_thread['totalReplyCount'])
 
 
+@print_input_on_error
 def map_playlist_item_to_video(playlist_item: Dict) -> YouTubeVideo:
     return YouTubeVideo(
         id=playlist_item['snippet']['resourceId']['videoId'],
@@ -120,6 +136,7 @@ def map_playlist_item_to_video(playlist_item: Dict) -> YouTubeVideo:
         tags=[])
 
 
+@print_input_on_error
 def map_video_to_video(video: Dict) -> YouTubeVideo:
     video_id = video['id']
     if 'tags' not in video['snippet']:
@@ -141,6 +158,7 @@ def map_video_to_video(video: Dict) -> YouTubeVideo:
         tags=tags)
 
 
+@print_input_on_error
 def map_video_search_result_to_video(result: Dict) -> YouTubeVideo:
     return YouTubeVideo(
         id=result['id']['videoId'],
@@ -152,6 +170,7 @@ def map_video_search_result_to_video(result: Dict) -> YouTubeVideo:
         tags=[])
 
 
+@print_input_on_error
 def map_video_to_video_stats(video: Dict) -> YouTubeVideoStats:
     return YouTubeVideoStats(
         video_id=video['id'],
