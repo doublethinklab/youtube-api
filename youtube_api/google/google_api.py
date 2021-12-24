@@ -145,11 +145,15 @@ class GoogleApiFunction:
                  stop_fn: Callable = lambda x: False,
                  **kwargs) -> List[Any]:
         response = self.wait_while_rate_limited(**kwargs)
+        if not response:
+            return []
         data = self.extract_data(response)
         next_page_token = self.get_next_page(response)
         while next_page_token and not stop_fn(data):
             kwargs['pageToken'] = next_page_token
             response = self.wait_while_rate_limited(**kwargs)
+            if not response:
+                return []
             data += self.extract_data(response)
             next_page_token = self.get_next_page(response)
         return data
@@ -183,6 +187,12 @@ class GoogleApiFunction:
                     # assuming this is transient
                     logging.warning('Backend error. Waiting 5 mins...')
                     time.sleep(5 * 60)
+                elif e.error_details[0]['reason'] == 'badRequest':
+                    # this doesn't appear to be transient, error for now
+                    logging.warning(f'"Bad request," API key was '
+                                    f'"{self.resource_manager.current_api_key}"'
+                                    f'.')
+                    raise e
                 else:
                     raise Exception('Unexpected HttpError reason: %s'
                                     % e.error_details[0]['reason'])
@@ -199,17 +209,20 @@ class GoogleApiFunction:
 
 class GetChannel(GoogleApiFunction, interface.GetChannel):
 
-    def __call__(self, channel_id: str) -> YouTubeChannel:
+    def __call__(self, channel_id: str) -> Union[YouTubeChannel, None]:
         data = self.paginate(
             id=channel_id,
             part='contentDetails,snippet,statistics,topicDetails')
         # TODO: proper way to know that no data is returned?
         if len(data) == 0:
-            raise ValueError(f'No data: {channel_id}')
-        return data[0]
+            return None
+        else:
+            return data[0]
 
     def extract_data(self, response) -> List[YouTubeChannel]:
         channels = []
+        if 'items' not in response:
+            return channels
         for channel in response['items']:
             channel = map_channel_to_channel(channel)
             channels.append(channel)
