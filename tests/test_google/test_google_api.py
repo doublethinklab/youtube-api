@@ -163,3 +163,46 @@ class TestSearch(unittest.TestCase):
         video = data[0]
         self.assertEqual(
             'Picking cotton by machine in Xinjiang，China', video.title)
+
+    # def test_complex_query1(self):
+    #     # NOTE: this was originally a playground. I determined:
+    #     #    - Cannot do a complex query like `admire salon | primary students`,
+    #     #      that returns zero results.
+    #     #    - Using parentheses to group the same - e.g. `(admire salon)|...`
+    #     #    - So for now just giving up on complex queries with this.
+    #     # GuliGina
+    #     # channel_id: UC_uwGDgtAVOQmb0zEMvftDQ
+    #     # video1:
+    #     #    title: Come and admire the beauty and hair salon #Xinjiang
+    #     #    created_at: 2021-12-08
+    #     # video2:
+    #     #    title: Xinjiang has been promoting the development of preschool
+    #     #           education for a long time. #Xinjiang
+    #     #    created_at: 2021-12-09
+    #     # video3:
+    #     #    title: The brothers are getting better and better #Xinjiang
+    #     #    created_at: 2021-12-08
+    #     # video4:
+    #     #    title: Do you know what primary school students in Xinjiang do
+    #     #           in a day?
+    #     #    created_at: 2021-11-25
+    #     # video5:
+    #     #    title: I am very proud that my students are employed when they
+    #     #           graduate.
+    #     #    created_at: 2021-11-29
+    #     resource_manager = get_resource_manager()
+    #     search = Search(resource_manager)
+    #     query = 'admire salon'
+    #     data = search(
+    #         query=query,
+    #         start=datetime(2021, 11, 20, 0, 0, 0),
+    #         end=datetime(2021, 12, 10, 0, 0, 0),
+    #         channel_id='UC_uwGDgtAVOQmb0zEMvftDQ')
+    #     titles = {x.title for x in data}
+    #     expected = {
+    #         'Do you know what primary school students in Xinjiang do in a day?',
+    #         'Come and admire the beauty and hair salon #Xinjiang',
+    #     }
+    #     print(titles)
+    #     self.assertEqual(2, len(data))
+    #     self.assertEqual(expected, titles)
