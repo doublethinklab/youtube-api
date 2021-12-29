@@ -4,7 +4,7 @@
 
 1. Install Docker - [instructions](https://docs.docker.com/engine/install/).
 2. Get a YouTube API key - [instructions](https://hackmd.io/o08YEPCWRyCDlgYU4H6PPA).
-   Save this as a file in the root directory of this project as `api.key`.
+   Save this as a file named anything in a folder in the root directory called `api_keys`.
 3. Build the image: `./build_image.sh`.
 
 ## Usage

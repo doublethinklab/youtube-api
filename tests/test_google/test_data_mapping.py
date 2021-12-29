@@ -71,6 +71,29 @@ class TestMapCommentToComment(unittest.TestCase):
             ])
         self.assertEqual(comment, expected)
 
+    @freeze_time(datetime(2021, 10, 15, 14, 35, 30))
+    def test_buggy_comment_1(self):
+        comment = responses.buggy_comment1
+        comment = map_comment_to_comment(
+            comment, 'whatever')
+        expected = YouTubeComment(
+            id='UgxPf-iLTjain_B66y94AaABAg',
+            video_id='PKkp3yjl0s4',
+            author_channel_id=None,
+            comment_thread_id='whatever',
+            replied_to_comment_id=None,
+            created_at=datetime(2021, 10, 5, 7, 5, 39),
+            text='Good!',
+            channel=None,
+            stats=[
+                YouTubeCommentStats(
+                    comment_id='UgxPf-iLTjain_B66y94AaABAg',
+                    collected_at=datetime(2021, 10, 15, 14, 35, 30),
+                    num_likes=0,
+                    num_replies=0)
+            ])
+        self.assertEqual(comment, expected)
+
 
 class TestMapCommentThreadToComments(unittest.TestCase):
 
@@ -153,7 +176,8 @@ class TestMapPlaylistItemToVideo(unittest.TestCase):
                         "https://www.instagram.com/dwnews\nFür Videos in "
                         "deutscher Sprache besuchen Sie: "
                         "https://www.youtube.com/dwdeutsch",
-            stats=[])
+            stats=[],
+            tags=[])
         self.assertEqual(expected, video)
 
 
@@ -163,6 +187,12 @@ class TestMapVideoToVideo(unittest.TestCase):
     def test_dw_video_item(self):
         video = responses.dw_video
         video = map_video_to_video(video)
+        tags = [
+            'DW News',
+            'Cumbre Vieja',
+            'la palma',
+            'la palma volcano',
+            'volcano eruption']
         expected = YouTubeVideo(
             id='5x5UxqKM7-Y',
             channel_id='UCknLrEdhRCp1aegoMqRaCZg',
@@ -200,6 +230,10 @@ class TestMapVideoToVideo(unittest.TestCase):
                     num_likes=97,
                     num_dislikes=2,
                     num_comments=17),
+            ],
+            tags=[
+                YouTubeVideoTag(video_id='5x5UxqKM7-Y', tag=tag)
+                for tag in tags
             ])
         self.assertEqual(expected, video)
 
@@ -215,5 +249,6 @@ class TestMapVideoSearchResultsToVideo(unittest.TestCase):
             created_at=datetime(2021, 3, 25, 10, 42, 3),
             title='Picking cotton by machine in Xinjiang，China',
             description="Picking cotton by machine in Xinjiang,China.",
-            stats=[])
+            stats=[],
+            tags=[])
         self.assertEqual(expected, video)
