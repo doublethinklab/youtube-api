@@ -2,12 +2,12 @@
 
 docker run \
     --rm \
-    -v %cd%:/youtube-api \
+    -v ${PWD}:/youtube-api \
     -w /youtube-api \
-    -p $1:$1 \
+    -p 8888:8888 \
         control.citw.io:5042/youtube-api:prod \
             jupyter notebook \
                 --ip 0.0.0.0 \
-                --port $1 \
+                --port 8888 \
                 --no-browser \
                 --allow-root
