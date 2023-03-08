@@ -1,6 +1,7 @@
 #!/bin/bash
 
 docker run \
+    --platform linux/amd64 \
     --rm \
     -v ${PWD}:/youtube-api \
     -w /youtube-api \
