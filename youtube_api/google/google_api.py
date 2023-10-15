@@ -18,10 +18,16 @@ from youtube_api import interface
 
 def get_keys(keys_dir: str = os.environ['YOUTUBE_API_KEYS_DIR']) -> List[str]:
     keys = []
-    for file in os.listdir(keys_dir):
-        file_path = os.path.join(keys_dir, file)
+    for file_name in os.listdir(keys_dir):
+        if not file_name.endswith('.key'):
+            continue
+        file_path = os.path.join(keys_dir, file_name)
         with open(file_path) as f:
-            key = f.read().strip()
+            try:
+                key = f.read().strip()
+            except Exception as e:
+                print(file_path)
+                raise e
             keys.append(key)
     return keys
 
@@ -48,8 +54,10 @@ def stop_when_at_size_or_date_limit(data: List[Any],
 class ApiKeyManager:
 
     def __init__(self,
-                 api_keys: List[str] = get_keys(),
+                 api_keys: List[str] = None,
                  wait_mins: int = 60):
+        if api_keys is None:
+            api_keys = get_keys()
         random.shuffle(api_keys)
         self.api_key_to_exceeded_time = {
             key: datetime(2000, 1, 1) for key in api_keys}
@@ -380,7 +388,9 @@ class Search(GoogleApiFunction, interface.Search):
 
 class GoogleYouTubeApi(interface.YouTubeApi):
 
-    def __init__(self, api_keys: Optional[List[str]] = get_keys()):
+    def __init__(self, api_keys: Optional[List[str]] = None):
+        if api_keys is None:
+            api_keys = get_keys()
         self.api_key_manager = ApiKeyManager(api_keys)
         self.resource_manager = ResourceManager(self.api_key_manager)
         super().__init__(

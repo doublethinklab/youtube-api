@@ -1,4 +1,4 @@
-FROM python:3.9.5
+FROM python:3.12.0
 
 # need this to install dependencies using our ssh key from github
 RUN apt install openssh-client
@@ -8,3 +8,5 @@ RUN pip install --upgrade pip
 COPY requirements.txt requirements.txt
 RUN --mount=type=ssh,id=github pip install -r requirements.txt
 RUN rm requirements.txt
+
+RUN pip install jupyter tqdm
